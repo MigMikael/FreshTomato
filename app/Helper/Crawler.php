@@ -43,9 +43,20 @@ class Crawler {
         $sql .= $value;
 
         if ($conn->query($sql) === TRUE) {
-            echo $movie['name'] . " created successfully";
+            #echo $movie['name'] . " created successfully";
         } else {
             echo "Error: " . $sql . "<br>" . $conn->error;
+        }
+    }
+
+    public function check_exist($movie_name, $conn){
+        $sql = "SELECT name FROM movie WHERE name='" . $movie_name . "';";
+        $result = $conn->query($sql);
+
+        if ($result->num_rows > 0) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -82,13 +93,15 @@ class Crawler {
                 $curr_movie_url = 'https://www.rottentomatoes.com'.$current_link;
                 echo $current_link;
 
-                /*
                 $html = $this->sendGetRequest($curr_movie_url, $curl);
                 $movie = [];
                 @$dom->loadHTML($html);
                 $dom->preserveWhiteSpace = false;
                 $movie_title = $dom->getElementById('movie-title');
                 $movie['name'] = trim(preg_replace('/\s+/', ' ', $movie_title->textContent));
+                if($this->check_exist($movie['name'], $conn) == true){
+                    continue;
+                }
 
                 $year = $movie_title->childNodes->item(1)->textContent;
                 $year = str_replace('(', '', $year);
@@ -132,9 +145,10 @@ class Crawler {
                 $ul_html = $this->get_inner_html($movie_ul->item(4));
 
 
-                @$dom->loadHTML($ul_html);
-                $div = $dom->getElementsByTagName('div');
-                $div_count = $dom->getElementsByTagName('div')->length;
+                $dom2 = new \DOMDocument();
+                @$dom2->loadHTML($ul_html);
+                $div = $dom2->getElementsByTagName('div');
+                $div_count = $dom2->getElementsByTagName('div')->length;
 
                 for ($i = 0; $i < $div_count; $i+=2){
                     if ($div->item($i)->textContent == 'Rating: '){
@@ -162,7 +176,7 @@ class Crawler {
                     }
                 }
                 $this->insertData($movie, $conn);
-                $count++;*/
+                $count++;
             }
         }
         # echo $count;

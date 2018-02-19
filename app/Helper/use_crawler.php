@@ -6,7 +6,7 @@
  * Time: 22:39
  */
 
-use App\Helper\Crawler;
+include("Crawler.php");
 
 $crawler = new Crawler();
 $crawler->getMovie();
