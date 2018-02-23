@@ -43,7 +43,7 @@ class Crawler {
         $sql .= $value;
 
         if ($conn->query($sql) === TRUE) {
-            #echo $movie['name'] . " created successfully";
+            echo $movie['name'] . " created successfully\n";
         } else {
             echo "Error: " . $sql . "<br>" . $conn->error;
         }
@@ -90,25 +90,35 @@ class Crawler {
         foreach ($links as $link){
             $current_link = $link->getAttribute('href');
             if (substr($current_link,0,3) == '/m/'){
+                if ($current_link == '/m/1000626-all_about_eve'){
+                    $current_link .= '?';
+                }
                 $curr_movie_url = 'https://www.rottentomatoes.com'.$current_link;
-                echo $current_link;
+                #echo $curr_movie_url . '\n';
 
                 $html = $this->sendGetRequest($curr_movie_url, $curl);
                 $movie = [];
-                @$dom->loadHTML($html);
-                $dom->preserveWhiteSpace = false;
-                $movie_title = $dom->getElementById('movie-title');
-                $movie['name'] = trim(preg_replace('/\s+/', ' ', $movie_title->textContent));
-                if($this->check_exist($movie['name'], $conn) == true){
+                $each_movie_dom = new \DOMDocument();
+                @$each_movie_dom->loadHTML($html);
+                $each_movie_dom->preserveWhiteSpace = false;
+                $movie_title = $each_movie_dom->getElementById('movie-title');
+                if($movie_title == null){
                     continue;
                 }
+                $name = $movie_title->textContent;
+                $name = trim(preg_replace('/\s+/', ' ', $name));
+                if($this->check_exist($name, $conn) == true){
+                    continue;
+                }
+                $name = str_replace("'", '*', $name);
+                $movie['name'] = $name;
 
                 $year = $movie_title->childNodes->item(1)->textContent;
                 $year = str_replace('(', '', $year);
                 $year = str_replace(')', '', $year);
                 $movie['year'] = (int)$year;
 
-                $critic = $dom->getElementById('all-critics-numbers');
+                $critic = $each_movie_dom->getElementById('all-critics-numbers');
                 $critic_score = $critic->getElementsByTagName('span')->item(1)->textContent;
                 $movie['critics_score'] = $critic_score;
 
@@ -116,13 +126,13 @@ class Crawler {
                 $rotten = $critic->getElementsByTagName('span')->item(9)->textContent;
                 $movie['fresh_rotten'] = $fresh . ':' . $rotten;
 
-                $image_section = $dom->getElementById('movie-image-section');
+                $image_section = $each_movie_dom->getElementById('movie-image-section');
                 $img = $image_section->getElementsByTagName('img');
                 $poster_url = $img->item(0)->getAttribute('src');
                 $movie['poster'] = $poster_url;
 
-                $all_div = $dom->getElementsByTagName('div');
-                $all_div_count = $dom->getElementsByTagName('div')->length;
+                $all_div = $each_movie_dom->getElementsByTagName('div');
+                $all_div_count = $each_movie_dom->getElementsByTagName('div')->length;
                 for ($i = 0; $i < $all_div_count; $i++){
                     if ($all_div->item($i)->getAttribute('class') == 'audience-score meter'){
                         $audience_score =  $all_div->item($i)->textContent;
@@ -133,14 +143,14 @@ class Crawler {
                     }
                 }
 
-                $info = $dom->getElementById('movieSynopsis');
+                $info = $each_movie_dom->getElementById('movieSynopsis');
                 $info = $info->textContent;
                 $info = str_replace(',', '|', $info);
                 $info = trim(preg_replace('/\s+/', ' ', $info));
                 $info = str_replace("'", '*', $info);
                 $movie['info'] = $info;
 
-                $mv_main_container = $dom->getElementById('main_container');
+                $mv_main_container = $each_movie_dom->getElementById('main_container');
                 $movie_ul = $mv_main_container->getElementsByTagName('ul');
                 $ul_html = $this->get_inner_html($movie_ul->item(4));
 
@@ -163,11 +173,13 @@ class Crawler {
                         $director = $div->item($i + 1)->textContent;
                         $director = str_replace(',', '|', $director);
                         $director = trim(preg_replace('/\s+/', ' ', $director));
+                        $director = str_replace("'", '*', $director);
                         $movie['director'] = $director;
                     }elseif ($div->item($i)->textContent == 'Written By: '){
                         $writer = $div->item($i + 1)->textContent;
                         $writer = str_replace(',', '|', $writer);
                         $writer = trim(preg_replace('/\s+/', ' ', $writer));
+                        $writer = str_replace("'", '*', $writer);
                         $movie['writer'] = $writer;
                     }elseif ($div->item($i)->textContent == 'Runtime: '){
                         $runTime = $div->item($i + 1)->textContent;

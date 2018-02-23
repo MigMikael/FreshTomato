@@ -1,13 +1,13 @@
 <?php
 
 namespace App\Http\Controllers;
-use App\Traits\CrawlerTrait;
+use App\Traits\SenderTrait;
 use Illuminate\Http\Request;
 use App\Movie;
 
 class TestController extends Controller
 {
-    use CrawlerTrait;
+    use SenderTrait;
 
     function get_inner_html( $node ){
         $innerHTML= '';
