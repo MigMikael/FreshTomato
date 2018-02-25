@@ -131,4 +131,9 @@ class TestController extends Controller
         }
         #echo $count;
     }
+
+    public function test_get_env()
+    {
+        return getenv("APP_ENV");
+    }
 }
