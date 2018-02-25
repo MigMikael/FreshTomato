@@ -18,11 +18,10 @@ class BotController extends Controller
                 if($event['type'] == 'message' && $event['message']['type'] == 'text'){
                     $text = $event['message']['text'];
                     $replyToken = $event['replyToken'];
-
+                    
                     $text = str_replace("'", "*", $text);
-                    $movie = Movie::where('name', $text)->first();
-
-                    if(sizeof($movie) == 1){
+                    if(Movie::where('name', $text)->exists()){
+                        $movie = Movie::where('name', $text)->first();
                         $messages1 = [
                             'type' => 'text',
                             'text' => $movie->name
@@ -35,14 +34,14 @@ class BotController extends Controller
 
                         $messages3 = [
                             'type' => 'text',
-                            'text' => 'Critics score : '.$movie->critics_score . '\n' . 'Audience score : '.$movie->audience_score
+                            'text' => 'Critics score : '.$movie->critics_score
                         ];
 
-                        $messages4 = [
+                        /*$messages4 = [
                             'type' => 'image',
                             'originalContentUrl' => $movie->poster,
                             'previewImageUrl' => $movie->poster
-                        ];
+                        ];*/
 
                         $data = [
                             'replyToken' => $replyToken,
@@ -50,7 +49,7 @@ class BotController extends Controller
                                 $messages1,
                                 $messages2,
                                 $messages3,
-                                $messages4
+                                //$messages4
                             ],
                         ];
                     }else{

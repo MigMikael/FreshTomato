@@ -136,4 +136,11 @@ class TestController extends Controller
     {
         return getenv("APP_ENV");
     }
+
+    public function test_query()
+    {
+        $text = 'Toy Story (1995)';
+        $movie = Movie::where('name', $text)->first();
+        return $movie;
+    }
 }
