@@ -129,6 +129,7 @@ class GetData extends Command
                 $movie['fresh_rotten'] = $fresh . ':' . $rotten;
 
                 $image_section = $each_movie_dom->getElementById('movie-image-section');
+                #$image_section = $each_movie_dom->getElementById('photos-carousel-root');
                 $img = $image_section->getElementsByTagName('img');
                 $poster_url = $img->item(0)->getAttribute('src');
                 $movie['poster'] = $poster_url;
@@ -189,6 +190,7 @@ class GetData extends Command
                         $movie['runtime'] = (int) $runTime;
                     }
                 }
+                $movie['url'] = $curr_movie_url;
                 $movie = Movie::create($movie);
                 echo $movie->name . " created successfully\n";
                 $count++;

@@ -18,7 +18,7 @@ class BotController extends Controller
                 if($event['type'] == 'message' && $event['message']['type'] == 'text'){
                     $text = $event['message']['text'];
                     $replyToken = $event['replyToken'];
-                    
+
                     $text = str_replace("'", "*", $text);
                     if(Movie::where('name', $text)->exists()){
                         $movie = Movie::where('name', $text)->first();
@@ -34,14 +34,28 @@ class BotController extends Controller
 
                         $messages3 = [
                             'type' => 'text',
-                            'text' => 'Critics score : '.$movie->critics_score
+                            'text' => 'Critics score : '.$movie->critics_score . '\n' . 'Audience score : '.$movie->audience_score
                         ];
 
-                        /*$messages4 = [
-                            'type' => 'image',
-                            'originalContentUrl' => $movie->poster,
-                            'previewImageUrl' => $movie->poster
-                        ];*/
+                        $columns = [
+                            'imageUrl' => $movie->poster,
+                            'action' => [
+                                'type' => 'uri',
+                                'label' => 'View Detail',
+                                'uri' => $movie->url
+                            ]
+                        ];
+
+                        $messages4 = [
+                            'type' => 'template',
+                            'altText' => $movie->name . ' image',
+                            'template' => [
+                                'type' => 'image_carousel',
+                                'columns' => [
+                                    $columns
+                                ]    
+                            ]
+                        ];
 
                         $data = [
                             'replyToken' => $replyToken,
@@ -49,7 +63,7 @@ class BotController extends Controller
                                 $messages1,
                                 $messages2,
                                 $messages3,
-                                //$messages4
+                                $messages4
                             ],
                         ];
                     }else{

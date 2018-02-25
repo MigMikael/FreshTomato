@@ -20,7 +20,8 @@ class Movie extends Model
         'audience_score',
         'fresh_rotten',
         'info',
-        'poster'
+        'poster',
+        'url'
     ];
 
 }

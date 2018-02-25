@@ -27,6 +27,7 @@ class CreateMovieTable extends Migration
             $table->string('fresh_rotten')->nullable();
             $table->text('info')->nullable();
             $table->text('poster')->nullable();
+            $table->text('url')->nullable();
             $table->timestamps();
         });
     }
