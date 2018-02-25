@@ -15,18 +15,18 @@ class CreateMovieTable extends Migration
     {
         Schema::create('movie', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('name');
-            $table->integer('year');
-            $table->string('rating');
-            $table->text('genre');
-            $table->text('director');
-            $table->text('writer');
-            $table->integer('runtime');
-            $table->string('critics_score');
-            $table->string('audience_score');
-            $table->string('fresh_rotten');
-            $table->text('info');
-            $table->text('poster');
+            $table->string('name')->nullable();
+            $table->integer('year')->nullable();
+            $table->string('rating')->nullable();
+            $table->text('genre')->nullable();
+            $table->text('director')->nullable();
+            $table->text('writer')->nullable();
+            $table->integer('runtime')->nullable();
+            $table->string('critics_score')->nullable();
+            $table->string('audience_score')->nullable();
+            $table->string('fresh_rotten')->nullable();
+            $table->text('info')->nullable();
+            $table->text('poster')->nullable();
             $table->timestamps();
         });
     }

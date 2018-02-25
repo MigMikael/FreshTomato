@@ -1,15 +1,47 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: Mig
- * Date: 2/17/18
- * Time: 8:26
- */
 
-namespace App\Helper;
-use mysqli;
+namespace App\Console\Commands;
 
-class Crawler {
+use Illuminate\Console\Command;
+use App\Movie;
+
+class GetData extends Command
+{
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'get:data';
+
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Get data for movie bot';
+
+    /**
+     * Create a new command instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
+    /**
+     * Execute the console command.
+     *
+     * @return mixed
+     */
+    public function handle()
+    {
+        $this->getMovie();
+
+    }
+
     public function sendGetRequest($url, $curl){
         curl_setopt_array($curl, array(
             CURLOPT_RETURNTRANSFER => 1,
@@ -31,32 +63,10 @@ class Crawler {
         return $innerHTML;
     }
 
-    public function insertData($movie, $conn){
-        $sql = "INSERT INTO movie (name, year, rating, genre, director, writer, runtime, critics_score, audience_score, fresh_rotten, info, poster, created_at, updated_at)";
-        $value = "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')";
-        $value = sprintf($value,
-            $movie['name'], $movie['year'],
-            $movie['rating'], $movie['genre'],
-            $movie['director'], $movie['writer'],
-            $movie['runtime'], $movie['critics_score'],
-            $movie['audience_score'], $movie['fresh_rotten'],
-            $movie['info'], $movie['poster'],
-            date('Y-m-d H:i:s'), date('Y-m-d H:i:s')
-        );
-        $sql .= $value;
+    public function check_exist($movie_name){
+        $movie = Movie::where('name', $movie_name)->first();
 
-        if ($conn->query($sql) === TRUE) {
-            echo $movie['name'] . " created successfully\n";
-        } else {
-            echo "Error: " . $sql . "<br>" . $conn->error;
-        }
-    }
-
-    public function check_exist($movie_name, $conn){
-        $sql = "SELECT name FROM movie WHERE name='" . $movie_name . "';";
-        $result = $conn->query($sql);
-
-        if ($result != null && $result->num_rows > 0) {
+        if (sizeof($movie) == 1) {
             return true;
         } else {
             return false;
@@ -64,15 +74,6 @@ class Crawler {
     }
 
     public function getMovie(){
-        $servername = "localhost";
-        $username = "root";
-        $password = "mig39525G";
-        $dbname = "fresh_tomato";
-
-        $conn = new mysqli($servername, $username, $password, $dbname);
-        if ($conn->connect_error) {
-            die("Connection failed: " . $conn->connect_error);
-        }
 
         $dom = new \DOMDocument();
         $url = 'https://www.rottentomatoes.com/top/bestofrt/';
@@ -110,10 +111,10 @@ class Crawler {
                 }
                 $name = $movie_title->textContent;
                 $name = trim(preg_replace('/\s+/', ' ', $name));
-                if($this->check_exist($name, $conn) == true){
+                $name = str_replace("'", '*', $name);
+                if($this->check_exist($name) == true){
                     continue;
                 }
-                $name = str_replace("'", '*', $name);
                 $movie['name'] = $name;
 
                 $year = $movie_title->childNodes->item(1)->textContent;
@@ -190,12 +191,12 @@ class Crawler {
                         $movie['runtime'] = (int) $runTime;
                     }
                 }
-                $this->insertData($movie, $conn);
+                $movie = Movie::create($movie);
+                echo $movie->name . " created successfully\n";
                 $count++;
             }
         }
         # echo $count;
-        $conn->close();
         curl_close($curl);
     }
 }
