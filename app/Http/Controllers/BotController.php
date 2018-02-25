@@ -24,20 +24,21 @@ class BotController extends Controller
                         $movie = Movie::where('name', $text)->first();
                         $messages1 = [
                             'type' => 'text',
-                            'text' => $movie->name
+                            'text' => $movie->name . ' ('. $movie->year . ')'
                         ];
 
+                        $f_r = explode(':', $movie->fresh_rotten);
                         $messages2 = [
                             'type' => 'text',
-                            'text' => 'Directed by '.$movie->director
+                            'text' => 'Fresh : ' . $f_r[0] . ' | Rotten : ' .$f_r[1]
                         ];
 
                         $messages3 = [
                             'type' => 'text',
-                            'text' => 'Critics score : '.$movie->critics_score . '\n' . 'Audience score : '.$movie->audience_score
+                            'text' => 'Critics score : '.$movie->critics_score . ' | Audience score : '.$movie->audience_score
                         ];
 
-                        $columns = [
+                        $columns1 = [
                             'imageUrl' => $movie->poster,
                             'action' => [
                                 'type' => 'uri',
@@ -52,8 +53,8 @@ class BotController extends Controller
                             'template' => [
                                 'type' => 'image_carousel',
                                 'columns' => [
-                                    $columns
-                                ]    
+                                    $columns1
+                                ]
                             ]
                         ];
 

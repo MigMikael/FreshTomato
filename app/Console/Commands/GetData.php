@@ -107,15 +107,18 @@ class GetData extends Command
                 if($movie_title == null){
                     continue;
                 }
+
+                $year = $movie_title->childNodes->item(1)->textContent;
+
                 $name = $movie_title->textContent;
                 $name = trim(preg_replace('/\s+/', ' ', $name));
+                $name = str_replace($year, '', $name);
                 $name = str_replace("'", '*', $name);
                 if($this->check_exist($name) == true){
                     continue;
                 }
                 $movie['name'] = $name;
 
-                $year = $movie_title->childNodes->item(1)->textContent;
                 $year = str_replace('(', '', $year);
                 $year = str_replace(')', '', $year);
                 $movie['year'] = (int)$year;
