@@ -64,9 +64,7 @@ class GetData extends Command
     }
 
     public function check_exist($movie_name){
-        $movie = Movie::where('name', $movie_name)->first();
-
-        if (sizeof($movie) == 1) {
+        if (Movie::where('name', $movie_name)->exists()) {
             return true;
         } else {
             return false;
