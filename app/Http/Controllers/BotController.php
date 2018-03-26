@@ -20,6 +20,8 @@ class BotController extends Controller
                     $replyToken = $event['replyToken'];
 
                     $text = str_replace("'", "*", $text);
+                    $this->classifyIntent($text);
+
                     if(Movie::where('name', $text)->exists()){
                         $movie = Movie::where('name', $text)->first();
                         $messages1 = [
@@ -88,5 +90,10 @@ class BotController extends Controller
                 }
             }
         }
+    }
+
+    public function classifyIntent($text)
+    {
+        
     }
 }

@@ -38,8 +38,19 @@ class GetData extends Command
      */
     public function handle()
     {
-        $this->getMovie();
+        $this->control();
 
+    }
+    public function control()
+    {
+        $url = 'https://www.rottentomatoes.com/top/bestofrt/';
+        $this->getMovie($url);
+        $start = 1940;
+        for ($year = $start; $year <= 2018; $year++){
+            $complete_url = $url . '?year=' . $year;
+            $this->getMovie($complete_url);
+            echo '##### '. $complete_url . " Finish #####\n";
+        }
     }
 
     public function sendGetRequest($url, $curl){
@@ -71,10 +82,10 @@ class GetData extends Command
         }
     }
 
-    public function getMovie(){
+    public function getMovie($url){
 
         $dom = new \DOMDocument();
-        $url = 'https://www.rottentomatoes.com/top/bestofrt/';
+        //$url = 'https://www.rottentomatoes.com/top/bestofrt/';
 
         $curl = curl_init();
 
