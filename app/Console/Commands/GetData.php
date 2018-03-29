@@ -2,8 +2,10 @@
 
 namespace App\Console\Commands;
 
+use App\Celeb;
 use Illuminate\Console\Command;
 use App\Movie;
+use Illuminate\Support\Facades\Log;
 
 class GetData extends Command
 {
@@ -39,17 +41,17 @@ class GetData extends Command
     public function handle()
     {
         $this->control();
-
+        //$this->getMovie('https://www.rottentomatoes.com/top/bestofrt/');
     }
     public function control()
     {
         $url = 'https://www.rottentomatoes.com/top/bestofrt/';
         $this->getMovie($url);
-        $start = 1940;
+        $start = 1980;
         for ($year = $start; $year <= 2018; $year++){
             $complete_url = $url . '?year=' . $year;
             $this->getMovie($complete_url);
-            echo '##### '. $complete_url . " Finish #####\n";
+            echo '############### '. $complete_url . " ###############\n";
         }
     }
 
@@ -74,8 +76,16 @@ class GetData extends Command
         return $innerHTML;
     }
 
-    public function check_exist($movie_name){
+    public function check_movie_exist($movie_name){
         if (Movie::where('name', $movie_name)->exists()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public function check_celeb_exist($celeb_name){
+        if(Celeb::where('name', $celeb_name)->exists()){
             return true;
         } else {
             return false;
@@ -85,7 +95,6 @@ class GetData extends Command
     public function getMovie($url){
 
         $dom = new \DOMDocument();
-        //$url = 'https://www.rottentomatoes.com/top/bestofrt/';
 
         $curl = curl_init();
 
@@ -99,7 +108,7 @@ class GetData extends Command
         @$dom->loadHTML($table_html);
         $links = $dom->getElementsByTagName('a');
 
-        $count = 0;
+        $count = 1;
         foreach ($links as $link){
             $current_link = $link->getAttribute('href');
             if (substr($current_link,0,3) == '/m/'){
@@ -107,13 +116,13 @@ class GetData extends Command
                     $current_link .= '?';
                 }
                 $curr_movie_url = 'https://www.rottentomatoes.com'.$current_link;
-                #echo $curr_movie_url . '\n';
 
                 $html = $this->sendGetRequest($curr_movie_url, $curl);
                 $movie = [];
                 $each_movie_dom = new \DOMDocument();
                 @$each_movie_dom->loadHTML($html);
                 $each_movie_dom->preserveWhiteSpace = false;
+
                 $movie_title = $each_movie_dom->getElementById('movie-title');
                 if($movie_title == null){
                     continue;
@@ -125,9 +134,14 @@ class GetData extends Command
                 $name = trim(preg_replace('/\s+/', ' ', $name));
                 $name = str_replace($year, '', $name);
                 $name = str_replace("'", '*', $name);
-                if($this->check_exist($name) == true){
+                if($this->check_movie_exist($name) == true){
                     continue;
                 }
+
+                echo "-------------------------------------\n";
+                echo "[ ".$count." ]\n";
+                echo "Begin ". $current_link . "\n";
+
                 $movie['name'] = $name;
 
                 $year = str_replace('(', '', $year);
@@ -206,11 +220,58 @@ class GetData extends Command
                 }
                 $movie['url'] = $curr_movie_url;
                 $movie = Movie::create($movie);
-                echo $movie->name . " created successfully\n";
+                echo "Finish ". $current_link . "\n";
                 $count++;
+
+                $all_a_tags = $each_movie_dom->getElementsByTagName('a');
+                $celeb_count = 0;
+                foreach ($all_a_tags as $tag){
+                    $l = $tag->getAttribute('href');
+                    if(strpos($l, '/celebrity/') !== false){
+                        $celeb_link = 'https://www.rottentomatoes.com'.$l;
+                        $celeb_html = $this->sendGetRequest($celeb_link, $curl);
+                        $each_celeb_dom = new \DOMDocument();
+                        @$each_celeb_dom->loadHTML($celeb_html);
+                        $each_movie_dom->preserveWhiteSpace = false;
+
+                        $celeb = [];
+                        $celeb['name'] = $each_celeb_dom->getElementsByTagName('h1')->item(0)->textContent;
+                        if ($this->check_celeb_exist($celeb['name'])){
+                            continue;
+                        }
+                        if ($celeb['name'] == '404 - Not Found'){
+                            continue;
+                        }
+
+                        $time_tags = $each_celeb_dom->getElementsByTagName('time');
+                        if($time_tags->item(0) != ''){
+                            $celeb['birthday'] = $time_tags->item(0)->textContent;
+                        }else{
+                            $celeb['birthday'] = 'NotAvailable';
+                        }
+
+                        $birthplace = $each_celeb_dom->getElementsByTagName('div')->item(140)->textContent;
+                        $birthplace = str_replace('Birthplace:', '',$birthplace);
+                        $birthplace = preg_replace('/\s+/', '', $birthplace);
+                        $birthplace = str_replace(' ', '', $birthplace);
+                        $celeb['birthplace'] = $birthplace;
+                        $celeb['info'] = $each_celeb_dom->getElementsByTagName('div')->item(141)->textContent;
+                        $image = $each_celeb_dom->getElementsByTagName('div')->item(135)->getAttribute('style');
+                        $image = str_replace("background-image:url('", '', $image);
+                        $celeb['image'] = substr($image, 0, -2);
+
+                        $celeb['highest_rate'] = $each_celeb_dom->getElementsByTagName('span')->item('72')->textContent;
+                        $celeb['lowest_rate'] = $each_celeb_dom->getElementsByTagName('span')->item('77')->textContent;
+                        $celeb['url'] = $celeb_link;
+                        $celeb = Celeb::create($celeb);
+                        $celeb_count++;
+                    }
+                }
+                echo "(".$celeb_count . " celeb created)\n";
             }
         }
-        # echo $count;
+        echo "-------------------------------------\n";
+        echo $count . " movies has been created\n";
         curl_close($curl);
     }
 }

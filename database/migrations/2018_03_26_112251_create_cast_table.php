@@ -22,6 +22,7 @@ class CreateCastTable extends Migration
             $table->text('image');
             $table->text('highest_rate');
             $table->text('lowest_rate');
+            $table->text('url');
             $table->timestamps();
         });
     }
