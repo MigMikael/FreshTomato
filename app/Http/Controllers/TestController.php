@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Traits\SenderTrait;
 use Illuminate\Http\Request;
 use App\Movie;
+use App\Library\THSplitLib\Segment;
 
 class TestController extends Controller
 {
@@ -142,5 +143,16 @@ class TestController extends Controller
         $text = 'Toy Story (1995)';
         $movie = Movie::where('name', $text)->first();
         return $movie;
+    }
+
+    public function test_split_th()
+    {
+        $segment = new Segment();
+        #$result = $segment->get_segment_array("สวัสดีแนะนำหนังหน่อยครับ");
+        #$result = $segment->get_segment_array("ช่วยแนะนำหนังหน่อยนะ");
+        $result = $segment->get_segment_array("ใครเป็นผู้กำกับหนังเรื่อง The Godfather");
+
+
+        return $result;
     }
 }

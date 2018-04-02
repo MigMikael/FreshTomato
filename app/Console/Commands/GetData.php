@@ -40,14 +40,14 @@ class GetData extends Command
      */
     public function handle()
     {
-        $this->control();
-        //$this->getMovie('https://www.rottentomatoes.com/top/bestofrt/');
+        //$this->control();
+        $this->getMovie('https://www.rottentomatoes.com/top/bestofrt/');
     }
     public function control()
     {
         $url = 'https://www.rottentomatoes.com/top/bestofrt/';
         $this->getMovie($url);
-        $start = 1980;
+        $start = 2001;
         for ($year = $start; $year <= 2018; $year++){
             $complete_url = $url . '?year=' . $year;
             $this->getMovie($complete_url);
@@ -228,43 +228,52 @@ class GetData extends Command
                 foreach ($all_a_tags as $tag){
                     $l = $tag->getAttribute('href');
                     if(strpos($l, '/celebrity/') !== false){
-                        $celeb_link = 'https://www.rottentomatoes.com'.$l;
-                        $celeb_html = $this->sendGetRequest($celeb_link, $curl);
-                        $each_celeb_dom = new \DOMDocument();
-                        @$each_celeb_dom->loadHTML($celeb_html);
-                        $each_movie_dom->preserveWhiteSpace = false;
+                        try{
+                            $celeb_link = 'https://www.rottentomatoes.com'.$l;
+                            $celeb_html = $this->sendGetRequest($celeb_link, $curl);
+                            $each_celeb_dom = new \DOMDocument();
+                            @$each_celeb_dom->loadHTML($celeb_html);
+                            $each_celeb_dom->preserveWhiteSpace = false;
 
-                        $celeb = [];
-                        $celeb['name'] = $each_celeb_dom->getElementsByTagName('h1')->item(0)->textContent;
-                        if ($this->check_celeb_exist($celeb['name'])){
+                            $celeb = [];
+                            $celeb_name = $each_celeb_dom->getElementsByTagName('h1');
+                            if($celeb_name == ''){
+                                continue;
+                            }
+
+                            $celeb['name'] = $celeb_name->item(0)->textContent;
+                            if ($this->check_celeb_exist($celeb['name'])){
+                                continue;
+                            }
+                            if ($celeb['name'] == '404 - Not Found'){
+                                continue;
+                            }
+
+                            $time_tags = $each_celeb_dom->getElementsByTagName('time');
+                            if($time_tags->item(0) != ''){
+                                $celeb['birthday'] = $time_tags->item(0)->textContent;
+                            }else{
+                                $celeb['birthday'] = 'NotAvailable';
+                            }
+
+                            $birthplace = $each_celeb_dom->getElementsByTagName('div')->item(140)->textContent;
+                            $birthplace = str_replace('Birthplace:', '',$birthplace);
+                            $birthplace = preg_replace('/\s+/', '', $birthplace);
+                            $birthplace = str_replace(' ', '', $birthplace);
+                            $celeb['birthplace'] = $birthplace;
+                            $celeb['info'] = $each_celeb_dom->getElementsByTagName('div')->item(141)->textContent;
+                            $image = $each_celeb_dom->getElementsByTagName('div')->item(135)->getAttribute('style');
+                            $image = str_replace("background-image:url('", '', $image);
+                            $celeb['image'] = substr($image, 0, -2);
+
+                            $celeb['highest_rate'] = $each_celeb_dom->getElementsByTagName('span')->item('72')->textContent;
+                            $celeb['lowest_rate'] = $each_celeb_dom->getElementsByTagName('span')->item('77')->textContent;
+                            $celeb['url'] = $celeb_link;
+                            $celeb = Celeb::create($celeb);
+                            $celeb_count++;
+                        }catch (\ErrorException $e){
                             continue;
                         }
-                        if ($celeb['name'] == '404 - Not Found'){
-                            continue;
-                        }
-
-                        $time_tags = $each_celeb_dom->getElementsByTagName('time');
-                        if($time_tags->item(0) != ''){
-                            $celeb['birthday'] = $time_tags->item(0)->textContent;
-                        }else{
-                            $celeb['birthday'] = 'NotAvailable';
-                        }
-
-                        $birthplace = $each_celeb_dom->getElementsByTagName('div')->item(140)->textContent;
-                        $birthplace = str_replace('Birthplace:', '',$birthplace);
-                        $birthplace = preg_replace('/\s+/', '', $birthplace);
-                        $birthplace = str_replace(' ', '', $birthplace);
-                        $celeb['birthplace'] = $birthplace;
-                        $celeb['info'] = $each_celeb_dom->getElementsByTagName('div')->item(141)->textContent;
-                        $image = $each_celeb_dom->getElementsByTagName('div')->item(135)->getAttribute('style');
-                        $image = str_replace("background-image:url('", '', $image);
-                        $celeb['image'] = substr($image, 0, -2);
-
-                        $celeb['highest_rate'] = $each_celeb_dom->getElementsByTagName('span')->item('72')->textContent;
-                        $celeb['lowest_rate'] = $each_celeb_dom->getElementsByTagName('span')->item('77')->textContent;
-                        $celeb['url'] = $celeb_link;
-                        $celeb = Celeb::create($celeb);
-                        $celeb_count++;
                     }
                 }
                 echo "(".$celeb_count . " celeb created)\n";

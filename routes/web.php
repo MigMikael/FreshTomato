@@ -21,3 +21,5 @@ Route::get('/test/get_movie', 'TestController@getMovie');
 Route::get('/test/get_env', 'TestController@test_get_env');
 
 Route::get('/test/query', 'TestController@test_query');
+
+Route::get('/test/split', 'TestController@test_split_th');
