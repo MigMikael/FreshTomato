@@ -41,12 +41,21 @@ class CrawlData extends Command
      */
     public function handle()
     {
+
         $curl = curl_init();
+
+        /*
+        $url = 'https://www.rottentomatoes.com/celebrity/771811333';
+        $url = 'https://www.rottentomatoes.com/celebrity/armie-hammer';
+        $url = 'https://www.rottentomatoes.com/celebrity/timothee_chalamet_2';
+        $this->crawlCeleb($url, $curl);
+        */
+
         $url = 'https://www.rottentomatoes.com/top/bestofrt/';
         $this->crawlMovieList($url, $curl);
 
         /*
-        $start = 1950;
+        $start = 1960;
         $end = 2018;
         for ($year = $start; $year <= $end; $year++){
             echo "################################### ". $year . " ###################################\n";
@@ -304,7 +313,13 @@ class CrawlData extends Command
         $cast_section_dom = new \DOMDocument();
         @$cast_section_dom->loadHTML($cast_section_html);
         $aTag = $cast_section_dom->getElementsByTagName('a');
-        $this->crawlCelebList($aTag, $movie, $curl);
+        $celeb_list = [];
+        for($i = 0; $i < $aTag->length; $i++){
+            $l = $aTag->item($i)->getAttribute('href');
+            array_push($celeb_list, $l);
+        }
+        $celeb_list = array_unique($celeb_list);
+        $this->crawlCelebList($celeb_list, $movie, $curl);
 
         return false;
     }
@@ -317,14 +332,13 @@ class CrawlData extends Command
         }
     }
 
-    public function crawlCelebList($aTag, $movie, $curl)
+    public function crawlCelebList($celeb_list, $movie, $curl)
     {
         $celeb_count = 0;
-        for ($i = 0; $i < $aTag->length; $i++){
+        foreach ($celeb_list as $celeb){
             try{
-                $l = $aTag->item($i)->getAttribute('href');
-                if(strpos($l, '/celebrity/') !== false){
-                    $celeb_link = 'https://www.rottentomatoes.com'.$l;
+                if(strpos($celeb, '/celebrity/') !== false){
+                    $celeb_link = 'https://www.rottentomatoes.com'.$celeb;
                     $celeb = $this->crawlCeleb($celeb_link, $curl);
                     if ($celeb == 'skip'){
                         continue;
@@ -355,35 +369,80 @@ class CrawlData extends Command
         $celeb = [];
         $celeb['name'] = $each_celeb_dom->getElementsByTagName('h1')->item(0)->textContent;
 
-
         if ($this->check_celeb_exist($celeb['name'])){
-            return Celeb::where('name', $celeb['name'])->first();
+            $exist_celeb = Celeb::where('name', $celeb['name'])->first();
+            return $exist_celeb;
         }
         if ($celeb['name'] == '404 - Not Found'){
             return 'skip';
         }
 
-        $time_tags = $each_celeb_dom->getElementsByTagName('time');
-        if($time_tags->item(0) != ''){
-            $celeb['birthday'] = $time_tags->item(0)->textContent;
-        }else{
-            $celeb['birthday'] = 'NotAvailable';
+        $main_container = $each_celeb_dom->getElementById('main_container');
+        $main_container_html = $this->get_inner_html($main_container);
+        $main_container_dom = new \DOMDocument();
+        @$main_container_dom->loadHTML($main_container_html);
+
+        $divs = $main_container_dom->getElementsByTagName('div');
+        $has_bio = false;
+        for ($i = 0; $i < $divs->length; $i++){
+            $current_div = $divs->item($i);
+            if ($current_div->getAttribute('class') == 'celeb_bio_row'){
+                $div_text = $current_div->textContent;
+                if(strpos($div_text, 'Highest Rated:') !== false){
+                    $hi_rate = preg_replace('/[^a-zA-Z0-9,%().]/', '#', $div_text);
+                    $hi_rate = str_replace('##', '', $hi_rate);
+                    $hi_rate = str_replace('Highest#Rated', '', $hi_rate);
+                    $hi_rate = str_replace('#', ' ', $hi_rate);
+                    $hi_rate = substr($hi_rate, 1);
+                    $celeb['highest_rate'] = $hi_rate;
+                    #echo $hi_rate . "\n";
+
+                }elseif(strpos($div_text, 'Lowest Rated:') !== false){
+                    $lo_rate = preg_replace('/[^a-zA-Z0-9,%().]/', '#', $div_text);
+                    $lo_rate = str_replace('##', '', $lo_rate);
+                    $lo_rate = str_replace('Lowest#Rated', '', $lo_rate);
+                    $lo_rate = str_replace('#', ' ', $lo_rate);
+                    $lo_rate = substr($lo_rate, 1);
+                    $celeb['lowest_rate'] = $lo_rate;
+                    #echo $lo_rate . "\n";
+                }
+                elseif (strpos($div_text, 'Birthday:') !== false){
+                    $birthday = preg_replace('/[^a-zA-Z0-9,]/', '', $div_text);
+                    //$birthday = preg_replace('/\s+/', '', $birthday);
+                    $birthday = str_replace('Birthday', '', $birthday);
+                    $celeb['birthday'] = $birthday;
+                    #echo $birthday . "\n";
+
+                }elseif(strpos($div_text, 'Birthplace:') !== false){
+                    $birthplace = preg_replace('/[^a-zA-Z0-9,]/', '', $div_text);
+                    //$birthplace = preg_replace('/\s+/', '', $birthplace);
+                    $birthplace = str_replace('Birthplace', '', $birthplace);
+                    $celeb['birthplace'] = $birthplace;
+                    #echo $birthplace . "\n";
+                }
+            }
+
+            if ($current_div->getAttribute('class') == 'celeb_summary_bio clamp clamp-5'){
+                $has_bio = true;
+                $div_text = $current_div->textContent;
+                $div_text = str_replace('  ', '', $div_text);
+                $celeb['info'] = $div_text;
+                #echo $div_text . "\n";
+            }
+
+            if ($current_div->getAttribute('class') == 'celebHeroImage'){
+                $image_url = $current_div->getAttribute('style');
+                $image_url = str_replace("background-image:url('", '', $image_url);
+                $image_url = str_replace("')", '', $image_url);
+                $celeb['image'] = $image_url;
+                #echo $image_url . "\n";
+            }
         }
 
-        $birthplace = $each_celeb_dom->getElementsByTagName('div')->item(140)->textContent;
-        $birthplace = str_replace('Birthplace:', '',$birthplace);
-        $birthplace = preg_replace('/\s+/', '', $birthplace);
-        $birthplace = str_replace(' ', '', $birthplace);
-        $celeb['birthplace'] = $birthplace;
-
-        $celeb['info'] = $each_celeb_dom->getElementsByTagName('div')->item(141)->textContent;
-
-        $image = $each_celeb_dom->getElementsByTagName('div')->item(135)->getAttribute('style');
-        $image = str_replace("background-image:url('", '', $image);
-        $celeb['image'] = substr($image, 0, -2);
-
-        $celeb['highest_rate'] = $each_celeb_dom->getElementsByTagName('span')->item('72')->textContent;
-        $celeb['lowest_rate'] = $each_celeb_dom->getElementsByTagName('span')->item('77')->textContent;
+        if ($has_bio == false){
+            $celeb['info'] = " ";
+            #echo 'bio not available' . "\n";
+        }
         $celeb['url'] = $url;
         $celeb = Celeb::create($celeb);
 
