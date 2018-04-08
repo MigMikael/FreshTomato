@@ -52,18 +52,15 @@ class CrawlData extends Command
         */
 
         $url = 'https://www.rottentomatoes.com/top/bestofrt/';
-        $this->crawlMovieList($url, $curl);
+        #$this->crawlMovieList($url, $curl);
 
-        /*
-        $start = 1960;
+        $start = 2007;
         $end = 2018;
         for ($year = $start; $year <= $end; $year++){
             echo "################################### ". $year . " ###################################\n";
             $complete_url = $url . '?year=' . $year;
             $this->crawlMovieList($complete_url, $curl);
         }
-        */
-
         curl_close($curl);
     }
 

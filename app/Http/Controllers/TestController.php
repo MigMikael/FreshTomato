@@ -150,7 +150,8 @@ class TestController extends Controller
         $segment = new Segment();
         #$result = $segment->get_segment_array("สวัสดีแนะนำหนังหน่อยครับ");
         #$result = $segment->get_segment_array("ช่วยแนะนำหนังหน่อยนะ");
-        $result = $segment->get_segment_array("ใครเป็นผู้กำกับหนังเรื่อง The Godfather");
+        #$result = $segment->get_segment_array("ใครเป็นผู้กำกับหนังเรื่อง The Godfather");
+        $result = $segment->get_segment_array("ใครเป็นผกก.หนังเรื่อง The Godfather");
 
 
         return $result;

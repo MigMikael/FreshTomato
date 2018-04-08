@@ -23,3 +23,13 @@ Route::get('/test/get_env', 'TestController@test_get_env');
 Route::get('/test/query', 'TestController@test_query');
 
 Route::get('/test/split', 'TestController@test_split_th');
+
+
+Route::get('/bot/chat', 'BotController@chat');
+
+Route::post('/bot/ask', 'BotController@ask');
+
+#Route::get('/bot/ask/{text}', 'BotController@testHandleMessage');
+
+
+

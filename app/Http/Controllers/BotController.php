@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Traits\SenderTrait;
 use App\Movie;
+use App\Library\THSplitLib\Segment;
 
 class BotController extends Controller
 {
@@ -92,8 +93,40 @@ class BotController extends Controller
         }
     }
 
-    public function classifyIntent($text)
+    public function testHandleMessage($text)
+    {
+        $segment = new Segment();
+        $segment_text = $segment->get_segment_array($text);
+
+        $this->classifyIntent($segment_text);
+
+        return $segment_text;
+    }
+
+    public function classifyIntent($segment_text)
     {
         
+    }
+
+    public function findAnswer($segment_text, $intent)
+    {
+
+    }
+
+    public function chat()
+    {
+        return view('chat');
+    }
+
+    public function ask(Request $request)
+    {
+        $question = $request->get('question');
+
+        $answer = $question;
+
+        return view('chat', [
+            'question' => $question,
+            'answer' => $answer
+        ]);
     }
 }
