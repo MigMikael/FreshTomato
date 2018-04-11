@@ -156,4 +156,18 @@ class TestController extends Controller
 
         return $result;
     }
+
+    public function test_read_file()
+    {
+        $word_arr = [];
+        $file_path = public_path('greeting.txt');
+        $myfile = fopen($file_path, "r") or die("Unable to open file!");
+        while(!feof($myfile)) {
+            #echo fgets($myfile) . "<br>";
+            array_push($word_arr, fgets($myfile));
+        }
+        fclose($myfile);
+
+        return $word_arr;
+    }
 }

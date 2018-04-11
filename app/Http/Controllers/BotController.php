@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Traits\SenderTrait;
 use App\Movie;
 use App\Library\THSplitLib\Segment;
+use Illuminate\Support\Facades\Log;
 
 class BotController extends Controller
 {
@@ -103,9 +104,40 @@ class BotController extends Controller
         return $segment_text;
     }
 
+    public function read_word_bag($path)
+    {
+        $word_arr = [];
+        $myfile = fopen($path, "r") or die("Unable to open file!");
+        while(!feof($myfile)) {
+            array_push($word_arr, fgets($myfile));
+        }
+        fclose($myfile);
+
+        return $word_arr;
+    }
+
+    /**
+     * @param $segment_text
+     * @return $intent
+     *
+     * intent consist of 4 types
+     * 1. Greeting
+     * 2. General
+     * 3. Suggest
+     * 4. Others
+     */
     public function classifyIntent($segment_text)
     {
-        
+        $greeting_path = public_path('greeting.txt');
+        $greeting_word = $this->read_word_bag($greeting_path);
+
+        foreach ($segment_text as $word){
+            Log::info($word);
+        }
+
+        $intent = "";
+
+        return $intent;
     }
 
     public function findAnswer($segment_text, $intent)
@@ -122,7 +154,13 @@ class BotController extends Controller
     {
         $question = $request->get('question');
 
-        $answer = $question;
+        $segment = new Segment();
+        $segment_text = $segment->get_segment_array($question);
+
+        $intent = $this->classifyIntent($segment_text);
+        $answer = $this->findAnswer($segment_text, $intent);
+
+        $answer = "งง ไปหมดเลยอ่า";
 
         return view('chat', [
             'question' => $question,

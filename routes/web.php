@@ -24,6 +24,8 @@ Route::get('/test/query', 'TestController@test_query');
 
 Route::get('/test/split', 'TestController@test_split_th');
 
+Route::get('/test/read_file', 'TestController@test_read_file');
+
 
 Route::get('/bot/chat', 'BotController@chat');
 
